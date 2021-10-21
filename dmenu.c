@@ -35,6 +35,7 @@ struct item {
 };
 
 static char text[BUFSIZ] = "";
+static int echo = 1;
 static char *embed;
 static int bh, mw, mh;
 static int inputw = 0, promptw;
@@ -143,7 +144,11 @@ drawmenu(void)
 	/* draw input field */
 	w = (lines > 0 || !matches) ? mw - x : inputw;
 	drw_setscheme(drw, scheme[SchemeNorm]);
-	drw_text(drw, x, 0, w, bh, lrpad / 2, text, 0);
+
+	if (echo)
+		drw_text(drw, x, 0, w, bh, lrpad / 2, text, 0);
+	else
+		drw_text(drw, x, 0, w, bh, lrpad / 2, "(no echo)", 0);
 
 	curpos = TEXTW(text) - TEXTW(&text[cursor]);
 	if ((curpos += lrpad / 2 - 1) < w) {
@@ -262,6 +267,7 @@ match(void)
 	}
 	curr = sel = matches;
 	calcoffsets();
+	memset(buf, '\0', sizeof(text));
 }
 
 static void
@@ -474,6 +480,7 @@ insert:
 	case XK_Return:
 	case XK_KP_Enter:
 		puts((sel && !(ev->state & ShiftMask)) ? sel->text : text);
+		memset(text, '\0', sizeof text);
 		if (!(ev->state & ControlMask)) {
 			cleanup();
 			exit(0);
@@ -700,7 +707,7 @@ setup(void)
 static void
 usage(void)
 {
-	fputs("usage: dmenu [-bfiv] [-l lines] [-p prompt] [-fn font] [-m monitor]\n"
+	fputs("usage: dmenu [-bfivE] [-l lines] [-p prompt] [-fn font] [-m monitor]\n"
 	      "             [-nb color] [-nf color] [-sb color] [-sf color] [-w windowid]\n", stderr);
 	exit(1);
 }
@@ -720,6 +727,8 @@ main(int argc, char *argv[])
 			topbar = 0;
 		else if (!strcmp(argv[i], "-f"))   /* grabs keyboard before reading stdin */
 			fast = 1;
+		else if (!strcmp(argv[i], "-E"))   /* no Echo, for use with passphrases */
+			echo = 0;
 		else if (!strcmp(argv[i], "-i")) { /* case-insensitive item matching */
 			fstrncmp = strncasecmp;
 			fstrstr = cistrstr;
